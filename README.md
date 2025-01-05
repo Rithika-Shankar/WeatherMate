@@ -19,7 +19,7 @@
 
 ### Weather Dashboard Interface and Interactive Map
 This is the main weather dashboard, displaying an interactive map where users can explore weather conditions across different regions.
-![Weather Dashboard](WeatherMate Interface.png)
+![Weather Dashboard](WeatherMateInterface.png)
 
 ### Weather Data
 Displays current weather conditions based on user-selected locations.
@@ -27,7 +27,7 @@ Displays current weather conditions based on user-selected locations.
 
 ### Chatbot Interaction
 Chatbot interface where users can ask specific weather-related queries.
-![Chatbot Interaction](path/to/screenshot3.png)
+![Chatbot Interaction](Chatbot.png)
 
 ## Installation
 
