@@ -45,15 +45,17 @@ To get started with WeatherMate, follow the steps below:
 
 3. **Install project dependencies**:
     ```bash
-    npm install
+    pip install Flask pandas scikit-learn joblib
     ```
 
-4. **Run the application**:
+4.**Add your disaster CSV file**: Ensure that the disaster.csv file is in the same directory as the app, as it is required for loading disaster data.
+
+5. **Run the application**:
     ```bash
-    npm start
+    python app.py
     ```
 
-5. Open your browser and navigate to `http://localhost:3000` to view the application.
+6. Open your browser and navigate to `http://localhost:3000` to view the application.
 
 ## Demo
 
