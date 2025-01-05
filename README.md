@@ -59,7 +59,7 @@ To get started with WeatherMate, follow the steps below:
 
 You can watch a demo of the application in action by clicking the link below:
 
-[Demo Video Link]
+[[Demo Video Link](https://youtu.be/3Oc4-cRcpSA?si=6QvNmmUyb0wYKvz5)]
 
 ## Contribution
 
