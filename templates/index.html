@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Disaster Management Dashboard</title>
+    <script src="https://atlas.microsoft.com/sdk/js/atlas.min.js?api-version=2.0&subscription-key=your_azure_map_key"></script>
+    <style>
+        :root {
+            --galaxy-dark: #1e1e2f;
+            --galaxy-purple: #7d3cff;
+            --galaxy-blue: #3c80ff;
+            --galaxy-pink: #ff007f;
+            --galaxy-light: #ffffff;
+            --galaxy-gradient: linear-gradient(135deg, #1e1e2f, #7d3cff, #3c80ff, #ff007f);
+        }
+
+        body {
+            font-family: 'Roboto', Arial, sans-serif;
+            background: var(--galaxy-gradient);
+            color: var(--galaxy-light);
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        .container {
+            width: 90%;
+            max-width: 1200px;
+            background: rgba(30, 30, 47, 0.9);
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.5);
+        }
+
+        h1 {
+            text-align: center;
+            color: var(--galaxy-pink);
+            margin-bottom: 20px;
+        }
+
+        form {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        label {
+            font-size: 1.2em;
+            margin-bottom: 10px;
+        }
+
+        input {
+            padding: 10px;
+            font-size: 1em;
+            border: none;
+            border-radius: 5px;
+            width: 100%;
+            max-width: 300px;
+            margin-bottom: 15px;
+        }
+
+        button {
+            padding: 10px 20px;
+            font-size: 1em;
+            color: var(--galaxy-light);
+            background: var(--galaxy-blue);
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        button:hover {
+            background: var(--galaxy-purple);
+        }
+
+        .content {
+            display: flex;
+            flex-direction: column; /* Stack the map, weather, and chatbot vertically */
+            gap: 20px;
+        }
+
+        #myMap {
+            height: 400px;
+            border-radius: 10px;
+            background-color: #e0e0e0; /* Ensures map is visible */
+        }
+
+        #weather {
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 10px;
+            padding: 20px;
+            text-align: center;
+            margin-bottom: 20px;
+            margin-top: 300px;
+        }
+
+        #weather h2 {
+            color: var(--galaxy-pink);
+            margin-bottom: 15px;
+        }
+
+        .weather-item {
+            margin-bottom: 10px;
+            font-size: 1.1em;
+        }
+
+        .weather-item strong {
+            display: inline-block;
+            margin-right: 5px;
+        }
+
+        #chatbot {
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 10px;
+            padding: 20px;
+            text-align: left;
+            height: 400px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+        }
+
+        #chatbot-messages {
+            flex: 1;
+            overflow-y: auto;
+            margin-bottom: 10px;
+        }
+
+        #chatbot-input {
+            display: flex;
+            gap: 10px;
+        }
+
+        #chatbot-input input {
+            flex: 1;
+            padding: 10px;
+            font-size: 1em;
+            border: none;
+            border-radius: 5px;
+        }
+
+        #chatbot-input button {
+            font-size: 1em;
+            background: var(--galaxy-purple);
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-bottom: 10px;
+        }
+
+        /* Add this to hide the predefined questions when selected */
+        .hidden {
+            display: none;
+        }
+    </style>
+    <script>
+        function GetMap() {
+            var mapCenter = JSON.parse('{{ map_center|tojson|safe }}');
+            var map = new atlas.Map('myMap', {
+                center: mapCenter,
+                zoom: 10,
+                view: 'Auto',
+                authOptions: {
+                    authType: 'subscriptionKey',
+                    subscriptionKey: '6y36xp7xCMAFYDlZxG8AzD1yLSp8jIESCubOxh4S0z1VvtinCQPtJQQJ99BAACi5Ypzb5XITAAAgAZMP2h1F' // Replace with your Azure Maps key
+                }
+            });
+
+            map.events.add('ready', function () {
+                addDisasterLayer(map);
+            });
+        }
+
+        function addChatbotMessage(sender, message) {
+            const messagesDiv = document.getElementById('chatbot-messages');
+            const newMessage = document.createElement('div');
+            newMessage.innerHTML = `<strong>${sender}:</strong> ${message}`;
+            messagesDiv.appendChild(newMessage);
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+        }
+
+        function sendPredefinedQuestion(question) {
+            addChatbotMessage('You', question);
+            // Hide the predefined questions once one is selected
+            document.getElementById('predefined-questions').classList.add('hidden');
+            fetch('/chatbot', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ user_input: question })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.reply) {
+                    addChatbotMessage('Chatbot', data.reply);
+                } else {
+                    addChatbotMessage('Chatbot', 'Sorry, I did not understand that.');
+                }
+            })
+            .catch(error => {
+                addChatbotMessage('Chatbot', 'Error: ' + error.message);
+            });
+        }
+
+        function handleChatbotInput(event) {
+            event.preventDefault();
+            const inputField = document.getElementById('chatbot-input-field');
+            const userMessage = inputField.value;
+            if (userMessage.trim() === '') return;
+
+            addChatbotMessage('You', userMessage);
+
+            // Send the message to the Flask backend for GPT response
+            fetch('/chatbot', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ user_input: userMessage }) // Use 'user_input' to match the Flask code
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.reply) {
+                    addChatbotMessage('Chatbot', data.reply);
+                } else {
+                    addChatbotMessage('Chatbot', 'Sorry, I didn\'t understand that.');
+                }
+            })
+            .catch(error => {
+                addChatbotMessage('Chatbot', 'Error: ' + error);
+            });
+
+            inputField.value = '';
+        }
+    </script>
+</head>
+<body onload="GetMap()">
+    <div class="container">
+        <h1>WeatherMate</h1>
+        <p style="text-align: center; font-weight: bold;">Your personal weather assistant, providing real-time weather data and interactive maps. Get prepared and stay informed with helpful guidance from the chatbot, always ready to assist with your disaster management needs!</p>
+        <form method="POST">
+            <label for="location">Enter your location:</label>
+            <input type="text" id="location" name="location" required placeholder="E.g., New York, USA">
+            <button type="submit">Get Weather Data</button>
+        </form>
+        <div class="content">
+            <div id="myMap"></div>
+            <div id="weather">
+                {% if weather_data %}
+                <h2>Weather Data:</h2>
+                <div class="weather-item"><strong>Location:</strong> {{ weather_data['name'] }}</div>
+                <div class="weather-item"><strong>Temperature:</strong> {{ weather_data['main']['temp'] }} °C</div>
+                <div class="weather-item"><strong>Weather:</strong> {{ weather_data['weather'][0]['description'] }}</div>
+                <div class="weather-item"><strong>Humidity:</strong> {{ weather_data['main']['humidity'] }}%</div>
+                {% endif %}
+            </div>
+            <div id="chatbot">
+                <div id="chatbot-messages">
+                    <div>Welcome to the Disaster Management Chatbot! How can I assist you today?</div>
+                </div>
+                <div id="chatbot-input">
+                    <input type="text" id="chatbot-input-field" placeholder="Ask a question..." />
+                    <button type="button" onclick="handleChatbotInput(event)">Send</button>
+                </div>
+                <div id="predefined-questions">
+                    <button onclick="sendPredefinedQuestion('How can I prepare for an earthquake?')">How can I prepare for an earthquake?</button>
+                    <button onclick="sendPredefinedQuestion('What should I do during a flood warning?')">What should I do during a flood warning?</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
